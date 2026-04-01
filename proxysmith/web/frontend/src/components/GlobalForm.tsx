@@ -11,36 +11,40 @@ export function GlobalForm({ config, onChange }: Props) {
     onChange({ ...config, [k]: v });
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <div>
-        <label className="block text-xs text-gray-400 mb-1">domain *</label>
-        <input
-          className="input-base"
-          value={config.domain}
-          placeholder="home.example.com"
-          onChange={(e) => set("domain", e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="block text-xs text-gray-400 mb-1">ssl</label>
-        <select
-          className="input-base"
-          value={config.ssl}
-          onChange={(e) => set("ssl", e.target.value as SSLMode)}
-        >
-          <option value="auto">auto (Let's Encrypt)</option>
-          <option value="manual">manual (own certs)</option>
-          <option value="none">none (HTTP only)</option>
-        </select>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-ink-3 mb-1.5">base domain</label>
+          <input
+            className="input-field"
+            value={config.domain}
+            placeholder="home.example.com"
+            onChange={(e) => set("domain", e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-ink-3 mb-1.5">ssl mode</label>
+          <select
+            className="input-field"
+            value={config.ssl}
+            onChange={(e) => set("ssl", e.target.value as SSLMode)}
+          >
+            <option value="auto">auto — Let's Encrypt</option>
+            <option value="manual">manual — your own certs</option>
+            <option value="none">none — http only</option>
+          </select>
+        </div>
       </div>
       {config.ssl === "auto" && (
         <div>
-          <label className="block text-xs text-gray-400 mb-1">email *</label>
+          <label className="block text-xs text-ink-3 mb-1.5">
+            acme email <span className="text-ink-4">(required for Let's Encrypt)</span>
+          </label>
           <input
-            className="input-base"
+            className="input-field"
             type="email"
             value={config.email}
-            placeholder="admin@example.com"
+            placeholder="you@example.com"
             onChange={(e) => set("email", e.target.value)}
           />
         </div>

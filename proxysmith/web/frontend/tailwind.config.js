@@ -1,21 +1,37 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
-  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
-        mono: ["JetBrains Mono", "Fira Code", "Consolas", "monospace"],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       colors: {
-        brand: {
-          50:  "#f0f9ff",
-          100: "#e0f2fe",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          900: "#0c4a6e",
+        surface: {
+          0: '#0c0c0d',
+          1: '#0f0f0e',
+          2: '#141413',
+          3: '#1a1917',
+          4: '#1e1d1b',
+          5: '#242220',
+        },
+        ink: {
+          1: '#e2e0da',
+          2: '#b0ada7',
+          3: '#7a7875',
+          4: '#4a4845',
+          5: '#2e2c28',
+        },
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.15s ease',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: 0, transform: 'translateY(2px)' },
+          to:   { opacity: 1, transform: 'translateY(0)' },
         },
       },
     },

@@ -12,12 +12,11 @@ interface Props {
 export function ConfigPreview({ files, loading, toml, targets }: Props) {
   const [activeFile, setActiveFile] = useState<string | null>(null);
 
-  const current =
-    files.find((f) => f.filename === activeFile) ?? files[0] ?? null;
+  const displayed = files.find(f => f.filename === (activeFile ?? files[0]?.filename)) ?? files[0] ?? null;
 
   const copy = useCallback(async (content: string) => {
     await navigator.clipboard.writeText(content);
-    toast.success("Copied to clipboard");
+    toast.success("copied");
   }, []);
 
   const download = useCallback(async () => {
@@ -26,10 +25,7 @@ export function ConfigPreview({ files, loading, toml, targets }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ toml, targets }),
     });
-    if (!res.ok) {
-      toast.error("Download failed");
-      return;
-    }
+    if (!res.ok) { toast.error("download failed"); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -37,204 +33,126 @@ export function ConfigPreview({ files, loading, toml, targets }: Props) {
     a.download = "proxysmith-configs.zip";
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Downloaded proxysmith-configs.zip");
+    toast.success("proxysmith-configs.zip");
   }, [toml, targets]);
 
   return (
     <div className="h-full flex flex-col">
       {/* Tab bar */}
-      <div className="flex items-center justify-between border-b border-gray-700 px-2 min-h-[42px] flex-shrink-0">
-        <div className="flex gap-1 overflow-x-auto">
-          {files.map((f) => (
-            <button
-              key={f.filename}
+      <div className="flex items-center justify-between border-b border-surface-4 px-2 min-h-[41px] flex-shrink-0">
+        <div className="flex overflow-x-auto">
+          {files.map(f => (
+            <button key={f.filename}
               onClick={() => setActiveFile(f.filename)}
-              className={`px-3 py-2 text-xs font-mono whitespace-nowrap transition-colors ${
-                (activeFile ?? files[0]?.filename) === f.filename
-                  ? "tab-active"
-                  : "tab-inactive"
-              }`}
-            >
+              className={`tab-btn ${(activeFile ?? files[0]?.filename) === f.filename ? "tab-active" : "tab-inactive"}`}>
               {f.filename.split("/").pop()}
             </button>
           ))}
-          {loading && (
-            <span className="px-3 py-2 text-xs text-gray-500 animate-pulse">
-              generating…
-            </span>
+          {loading && !files.length && (
+            <span className="px-4 py-2.5 mono text-xs text-ink-5 animate-pulse">generating…</span>
           )}
         </div>
 
-        {files.length > 0 && (
-          <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-            {current && (
-              <button
-                className="btn-ghost text-xs"
-                onClick={() => copy(current.content)}
-                title="Copy to clipboard"
-              >
-                Copy
-              </button>
-            )}
-            <button
-              className="btn-ghost text-xs"
-              onClick={download}
-              title="Download all as ZIP"
-            >
-              ↓ ZIP
-            </button>
+        {displayed && (
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button className="btn-ghost text-xs mono" onClick={() => copy(displayed.content)}>copy</button>
+            <button className="btn-ghost text-xs mono" onClick={download}>zip ↓</button>
           </div>
         )}
       </div>
 
-      {/* Code view */}
-      <div className="flex-1 overflow-auto p-4">
-        {!loading && files.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-600 select-none">
-            <div className="text-4xl mb-3">⚙</div>
-            <div className="text-sm">
-              Config preview will appear here
-            </div>
-            <div className="text-xs mt-1">
-              Edit your services and the output updates live
-            </div>
+      {/* Code */}
+      <div className="flex-1 overflow-auto">
+        {!displayed && !loading && (
+          <div className="flex flex-col items-center justify-center h-full text-ink-5 select-none gap-2">
+            <div className="mono text-3xl">{ }</div>
+            <div className="text-sm">add a service to see output</div>
           </div>
         )}
 
-        {current && (
-          <pre className="font-mono text-xs text-gray-300 whitespace-pre leading-relaxed">
-            <SyntaxHighlight content={current.content} filename={current.filename} />
+        {displayed && (
+          <pre className="mono text-xs text-ink-3 p-4 leading-[1.65] min-h-full">
+            <HighlightedCode content={displayed.content} filename={displayed.filename} />
           </pre>
         )}
       </div>
 
-      {/* Footer stats */}
-      {current && (
-        <div className="border-t border-gray-700 px-4 py-1.5 flex items-center gap-4 text-xs text-gray-500 flex-shrink-0">
-          <span>{current.filename}</span>
-          <span>{current.size.toLocaleString()} bytes</span>
-          <span className="font-mono">sha:{current.checksum}</span>
+      {/* Status bar */}
+      {displayed && (
+        <div className="border-t border-surface-4 px-4 py-1 flex items-center gap-4 mono text-xs text-ink-5 flex-shrink-0">
+          <span>{displayed.filename}</span>
+          <span className="ml-auto">{(displayed.size / 1024).toFixed(1)}kb</span>
+          <span className="text-ink-5/60">#{displayed.checksum}</span>
         </div>
       )}
     </div>
   );
 }
 
-// ---- Minimal syntax highlighter (no dependencies) ----
+// ── Syntax highlighting ──────────────────────────────────────────────────────
 
-function SyntaxHighlight({
-  content,
-  filename,
-}: {
-  content: string;
-  filename: string;
-}) {
+function HighlightedCode({ content, filename }: { content: string; filename: string }) {
   const isNginx = filename.endsWith(".conf");
-  const isYaml =
-    filename.endsWith(".yml") || filename.endsWith(".yaml");
-  const isCaddy = filename === "Caddyfile" || filename.endsWith("/Caddyfile");
-
-  const lines = content.split("\n");
+  const isYaml  = filename.endsWith(".yml") || filename.endsWith(".yaml");
+  const lines   = content.split("\n");
 
   return (
     <>
       {lines.map((line, i) => (
-        <span key={i}>
-          <LineNum n={i + 1} />
-          <HighlightLine line={line} isNginx={isNginx} isYaml={isYaml} />
-          {"\n"}
+        <span key={i} className="block">
+          <span className="select-none text-ink-5/40 mr-5 inline-block w-7 text-right">{i + 1}</span>
+          <HL line={line} nginx={isNginx} yaml={isYaml} />
         </span>
       ))}
     </>
   );
 }
 
-function LineNum({ n }: { n: number }) {
-  return (
-    <span className="select-none text-gray-600 mr-4 inline-block w-7 text-right">
-      {n}
-    </span>
-  );
-}
+function HL({ line, nginx, yaml }: { line: string; nginx: boolean; yaml: boolean }) {
+  const t = line.trimStart();
 
-function HighlightLine({
-  line,
-  isNginx,
-  isYaml,
-}: {
-  line: string;
-  isNginx: boolean;
-  isYaml: boolean;
-}) {
-  const trimmed = line.trimStart();
+  if (t.startsWith("#"))  return <span className="text-ink-5/70 italic">{line}</span>;
+  if (t.startsWith("---")) return <span className="text-ink-5">{line}</span>;
 
-  // Comments
-  if (trimmed.startsWith("#")) {
-    return <span className="text-gray-500">{line}</span>;
-  }
-
-  // YAML key: value
-  if (isYaml) {
-    const m = line.match(/^(\s*)([\w-]+)(\s*:\s*)(.*)$/);
-    if (m) {
-      return (
-        <span>
-          <span>{m[1]}</span>
-          <span className="text-blue-300">{m[2]}</span>
-          <span className="text-gray-400">{m[3]}</span>
-          <ValueSpan value={m[4]} />
-        </span>
-      );
-    }
-    // list item
-    if (trimmed.startsWith("- ")) {
-      return (
-        <span>
-          <span className="text-gray-400">{line.slice(0, line.indexOf("- ") + 2)}</span>
-          <span className="text-green-300">{line.slice(line.indexOf("- ") + 2)}</span>
-        </span>
-      );
+  if (yaml) {
+    const m = line.match(/^(\s*)([\w.-]+)(\s*:\s*)(.*)$/);
+    if (m) return (
+      <span>
+        {m[1]}<span className="text-amber-300/90">{m[2]}</span>
+        <span className="text-ink-4">{m[3]}</span>
+        <YamlVal v={m[4]} />
+      </span>
+    );
+    if (t.startsWith("- ")) {
+      const indent = line.slice(0, line.indexOf("- "));
+      const rest   = line.slice(line.indexOf("- ") + 2);
+      return <span>{indent}<span className="text-ink-4">- </span><span className="text-green-400/80">{rest}</span></span>;
     }
   }
 
-  // Nginx directive
-  if (isNginx) {
-    const m = line.match(/^(\s*)(\w[\w_-]*)(\s+)(.+?)(;?)(\s*)$/);
-    if (m && !trimmed.startsWith("{") && !trimmed.startsWith("}")) {
-      return (
-        <span>
-          <span>{m[1]}</span>
-          <span className="text-yellow-300">{m[2]}</span>
-          <span>{m[3]}</span>
-          <span className="text-green-300">{m[4]}</span>
-          <span className="text-gray-400">{m[5]}</span>
-        </span>
-      );
-    }
-    if (trimmed === "{" || trimmed === "}") {
-      return <span className="text-gray-400">{line}</span>;
-    }
+  if (nginx) {
+    if (t === "{" || t === "}") return <span className="text-ink-4">{line}</span>;
+    const m = line.match(/^(\s*)(\w[\w_-]*)(\s+)(.+?)(;?\s*)$/);
+    if (m) return (
+      <span>
+        {m[1]}<span className="text-amber-300/80">{m[2]}</span>
+        {m[3]}<span className="text-green-400/80">{m[4]}</span>
+        <span className="text-ink-5">{m[5]}</span>
+      </span>
+    );
+    if (/^\S.*\{/.test(t)) return <span className="text-sky-300/80">{line}</span>;
   }
 
-  // Caddyfile block header (fqdn { )
-  if (!isYaml && !isNginx) {
-    if (/^\S.*\{$/.test(trimmed)) {
-      return <span className="text-cyan-300">{line}</span>;
-    }
-  }
+  // Caddyfile block header
+  if (!yaml && !nginx && /^\S.*\{$/.test(t)) return <span className="text-sky-300/80">{line}</span>;
 
   return <span>{line}</span>;
 }
 
-function ValueSpan({ value }: { value: string }) {
-  if (value.startsWith('"') || value.startsWith("'")) {
-    return <span className="text-green-300">{value}</span>;
-  }
-  if (value === "true" || value === "false") {
-    return <span className="text-orange-300">{value}</span>;
-  }
-  if (/^\d/.test(value)) {
-    return <span className="text-purple-300">{value}</span>;
-  }
-  return <span className="text-gray-200">{value}</span>;
+function YamlVal({ v }: { v: string }) {
+  if (!v) return null;
+  if (v.startsWith('"') || v.startsWith("'")) return <span className="text-green-400/80">{v}</span>;
+  if (v === "true" || v === "false")           return <span className="text-orange-400/80">{v}</span>;
+  if (/^\d/.test(v))                           return <span className="text-purple-400/80">{v}</span>;
+  return <span className="text-ink-2">{v}</span>;
 }
