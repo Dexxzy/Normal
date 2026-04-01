@@ -1,0 +1,18 @@
+    # --- SSL / TLS ---
+{% if service.ssl_mode == "auto" %}
+    ssl_certificate     /etc/letsencrypt/live/{{ service.fqdn }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ service.fqdn }}/privkey.pem;
+{% elif service.ssl_mode == "manual" %}
+    ssl_certificate     /etc/ssl/certs/{{ service.fqdn }}.crt;
+    ssl_certificate_key /etc/ssl/private/{{ service.fqdn }}.key;
+{% endif %}
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+    ssl_stapling        on;
+    ssl_stapling_verify on;
+    resolver            1.1.1.1 8.8.8.8 valid=300s;
+    resolver_timeout    5s;

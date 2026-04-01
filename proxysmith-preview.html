@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ProxySmith — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #0c0c0d;
+  color: #e2e0da;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ── scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2e2c28; border-radius: 99px; }
+
+/* ── layout ── */
+.app    { display: flex; flex-direction: column; height: 100vh; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 48px;
+  border-bottom: 1px solid #1e1d1b;
+  flex-shrink: 0;
+}
+.body   { display: flex; flex: 1; overflow: hidden; }
+.footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; height: 32px;
+  border-top: 1px solid #1e1d1b;
+  flex-shrink: 0;
+}
+
+/* ── panels ── */
+.left-panel {
+  width: 44%; min-width: 320px; flex-shrink: 0;
+  border-right: 1px solid #1e1d1b;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.right-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── editor area ── */
+.editor-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #1e1d1b;
+  flex-shrink: 0;
+}
+.editor-body {
+  flex: 1; overflow-y: auto;
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: #7a7875;
+}
+
+/* ── code theme ── */
+.c-comment  { color: #4a4845; font-style: italic; }
+.c-key      { color: #f59e0b99; }
+.c-str      { color: #86efac99; }
+.c-num      { color: #c084fc99; }
+.c-section  { color: #e2e0da; font-weight: 500; }
+.c-bool     { color: #fb923c99; }
+.ln { color: #2e2c2840; display: inline-block; width: 28px; text-align: right; margin-right: 20px; user-select: none; }
+
+/* ── target tabs ── */
+.tabs {
+  display: flex; align-items: center;
+  border-bottom: 1px solid #1e1d1b;
+  padding: 0 8px;
+  flex-shrink: 0; min-height: 41px;
+}
+.tab {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: #3d3b36;
+  transition: color 0.12s;
+  white-space: nowrap;
+}
+.tab.active { color: #f59e0b; border-color: #f59e0b; }
+.tab:not(.active):hover { color: #7a7875; }
+.tab .count { font-size: 10px; margin-left: 4px; color: #3d3b36; }
+
+/* ── output code ── */
+.output-body {
+  flex: 1; overflow: auto;
+  padding: 16px;
+}
+.output-body pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: #7a7875;
+}
+
+/* ── status bar ── */
+.statusbar {
+  border-top: 1px solid #1e1d1b;
+  padding: 4px 16px;
+  display: flex; align-items: center; gap: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #3d3b36;
+  flex-shrink: 0;
+}
+.statusbar .ml { margin-left: auto; }
+
+/* ── mode toggle ── */
+.mode-toggle {
+  display: flex; background: #1a1917; border-radius: 8px;
+  padding: 2px; border: 1px solid #1e1d1b;
+}
+.mode-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; padding: 4px 12px; border-radius: 6px;
+  cursor: pointer; transition: all 0.1s;
+  color: #4a4845;
+}
+.mode-btn.active { background: #242220; color: #e2e0da; }
+
+/* ── topbar elements ── */
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-text { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+.logo-text span { color: #f59e0b; }
+.logo-sub { font-size: 11px; color: #3d3b36; font-family: 'JetBrains Mono', monospace; }
+.ghost-link {
+  font-size: 12px; color: #4a4845;
+  text-decoration: none; padding: 6px 10px; border-radius: 6px;
+  transition: color 0.12s; font-family: 'JetBrains Mono', monospace;
+}
+.ghost-link:hover { color: #b0ada7; }
+.topbar-right { display: flex; align-items: center; gap: 4px; }
+
+/* ── output action buttons ── */
+.output-actions { display: flex; gap: 2px; margin-left: auto; }
+.action-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; padding: 5px 10px; border-radius: 6px;
+  color: #4a4845; cursor: pointer; transition: color 0.12s;
+}
+.action-btn:hover { color: #b0ada7; background: #1a1917; }
+
+/* ── valid indicator ── */
+.valid-dot { color: #4ade80; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Top bar ── -->
+  <header class="topbar">
+    <div class="logo">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="color:#f59e0b; flex-shrink:0">
+        <path d="M9.5 2L14 6.5L7 13.5L2.5 9L9.5 2Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <path d="M12 4L13.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M2 14L4 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">proxy<span>smith</span></span>
+      <span class="logo-sub" style="margin-left:8px">nginx · caddy · traefik</span>
+    </div>
+    <div class="topbar-right">
+      <div class="mode-toggle">
+        <div class="mode-btn">visual</div>
+        <div class="mode-btn active">toml</div>
+      </div>
+      <a class="ghost-link" href="#">github</a>
+    </div>
+  </header>
+
+  <!-- ── Body ── -->
+  <div class="body">
+
+    <!-- ── Left: TOML editor ── -->
+    <div class="left-panel">
+      <div class="editor-header">
+        <span class="mono" style="font-size:11px; color:#4a4845">proxysmith.toml</span>
+        <span class="valid-dot">valid</span>
+      </div>
+      <div class="editor-body">
+<span class="ln">1</span><span class="c-section">[global]</span>
+<span class="ln">2</span><span class="c-key">domain</span> = <span class="c-str">"home.example.com"</span>
+<span class="ln">3</span><span class="c-key">ssl</span>    = <span class="c-str">"auto"</span>
+<span class="ln">4</span><span class="c-key">email</span>  = <span class="c-str">"admin@example.com"</span>
+<span class="ln">5</span>
+<span class="ln">6</span><span class="c-section">[[service]]</span>
+<span class="ln">7</span><span class="c-key">name</span>      = <span class="c-str">"plex"</span>
+<span class="ln">8</span><span class="c-key">host</span>      = <span class="c-str">"192.168.1.50"</span>
+<span class="ln">9</span><span class="c-key">port</span>      = <span class="c-num">32400</span>
+<span class="ln">10</span><span class="c-key">subdomain</span> = <span class="c-str">"plex"</span>
+<span class="ln">11</span><span class="c-key">websocket</span> = <span class="c-bool">true</span>
+<span class="ln">12</span><span class="c-key">headers</span>   = { X-Plex-Client-Identifier = <span class="c-str">"proxysmith"</span> }
+<span class="ln">13</span>
+<span class="ln">14</span><span class="c-section">[[service]]</span>
+<span class="ln">15</span><span class="c-key">name</span>       = <span class="c-str">"immich"</span>
+<span class="ln">16</span><span class="c-key">host</span>       = <span class="c-str">"192.168.1.50"</span>
+<span class="ln">17</span><span class="c-key">port</span>       = <span class="c-num">2283</span>
+<span class="ln">18</span><span class="c-key">subdomain</span>  = <span class="c-str">"photos"</span>
+<span class="ln">19</span><span class="c-key">max_upload</span> = <span class="c-str">"10G"</span>
+<span class="ln">20</span>
+<span class="ln">21</span><span class="c-section">[[service]]</span>
+<span class="ln">22</span><span class="c-key">name</span>       = <span class="c-str">"ollama"</span>
+<span class="ln">23</span><span class="c-key">host</span>       = <span class="c-str">"192.168.1.50"</span>
+<span class="ln">24</span><span class="c-key">port</span>       = <span class="c-num">11434</span>
+<span class="ln">25</span><span class="c-key">subdomain</span>  = <span class="c-str">"llm"</span>
+<span class="ln">26</span><span class="c-key">auth</span>       = <span class="c-str">"basic"</span>
+<span class="ln">27</span><span class="c-key">rate_limit</span> = <span class="c-str">"60/min"</span>
+<span class="ln">28</span>
+<span class="ln">29</span><span class="c-section">[[service]]</span>
+<span class="ln">30</span><span class="c-key">name</span>      = <span class="c-str">"homepage"</span>
+<span class="ln">31</span><span class="c-key">host</span>      = <span class="c-str">"192.168.1.50"</span>
+<span class="ln">32</span><span class="c-key">port</span>      = <span class="c-num">3000</span>
+<span class="ln">33</span><span class="c-key">subdomain</span> = <span class="c-str">"dash"</span>
+      </div>
+    </div>
+
+    <!-- ── Right: nginx output ── -->
+    <div class="right-panel">
+      <div class="tabs">
+        <div class="tab active">nginx <span class="count">×1</span></div>
+        <div class="tab">caddy <span class="count">×1</span></div>
+        <div class="tab">traefik <span class="count">×2</span></div>
+        <div class="output-actions">
+          <div class="action-btn">copy</div>
+          <div class="action-btn">zip ↓</div>
+        </div>
+      </div>
+
+      <div class="output-body">
+        <pre><span class="ln">1</span><span class="c-comment"># Generated by ProxySmith — https://github.com/dexxzy/proxysmith</span>
+<span class="ln">2</span><span class="c-comment"># Domain:   home.example.com</span>
+<span class="ln">3</span><span class="c-comment"># SSL mode: auto</span>
+<span class="ln">4</span><span class="c-comment"># Services: 4</span>
+<span class="ln">5</span>
+<span class="ln">6</span><span class="c-comment"># --- Rate limit zones (place in http {} context) ---</span>
+<span class="ln">7</span><span class="c-comment"># limit_req_zone $binary_remote_addr zone=ollama_limit:10m rate=60r/min;</span>
+<span class="ln">8</span>
+<span class="ln">9</span><span class="c-comment"># --- Upstreams ---</span>
+<span class="ln">10</span><span style="color:#7dd3fc99">upstream</span> <span style="color:#e2e0da">proxysmith_plex</span> <span style="color:#4a4845">{</span>
+<span class="ln">11</span>    <span class="c-key">server</span> <span class="c-str">192.168.1.50:32400</span>;
+<span class="ln">12</span>    <span class="c-key">keepalive</span> <span class="c-num">32</span>;
+<span class="ln">13</span><span style="color:#4a4845">}</span>
+<span class="ln">14</span>
+<span class="ln">15</span><span style="color:#7dd3fc99">upstream</span> <span style="color:#e2e0da">proxysmith_immich</span> <span style="color:#4a4845">{</span>
+<span class="ln">16</span>    <span class="c-key">server</span> <span class="c-str">192.168.1.50:2283</span>;
+<span class="ln">17</span>    <span class="c-key">keepalive</span> <span class="c-num">32</span>;
+<span class="ln">18</span><span style="color:#4a4845">}</span>
+<span class="ln">19</span>
+<span class="ln">20</span><span style="color:#7dd3fc99">upstream</span> <span style="color:#e2e0da">proxysmith_ollama</span> <span style="color:#4a4845">{</span>
+<span class="ln">21</span>    <span class="c-key">server</span> <span class="c-str">192.168.1.50:11434</span>;
+<span class="ln">22</span>    <span class="c-key">keepalive</span> <span class="c-num">32</span>;
+<span class="ln">23</span><span style="color:#4a4845">}</span>
+<span class="ln">24</span>
+<span class="ln">25</span><span class="c-comment"># --- Service: plex ---</span>
+<span class="ln">26</span><span class="c-comment"># HTTP → HTTPS redirect</span>
+<span class="ln">27</span><span style="color:#7dd3fc99">server</span> <span style="color:#4a4845">{</span>
+<span class="ln">28</span>    <span class="c-key">listen</span>      <span class="c-str">80</span>;
+<span class="ln">29</span>    <span class="c-key">server_name</span> <span class="c-str">plex.home.example.com</span>;
+<span class="ln">30</span>    <span class="c-key">return</span> <span class="c-num">301</span>  https://$host$request_uri;
+<span class="ln">31</span><span style="color:#4a4845">}</span>
+<span class="ln">32</span>
+<span class="ln">33</span><span style="color:#7dd3fc99">server</span> <span style="color:#4a4845">{</span>
+<span class="ln">34</span>    <span class="c-key">listen</span>      <span class="c-str">443 ssl</span>;
+<span class="ln">35</span>    <span class="c-key">listen</span>      <span class="c-str">[::]:443 ssl</span>;
+<span class="ln">36</span>    <span class="c-key">http2</span>       <span class="c-bool">on</span>;
+<span class="ln">37</span>    <span class="c-key">server_name</span> <span class="c-str">plex.home.example.com</span>;
+<span class="ln">38</span>
+<span class="ln">39</span>    <span class="c-comment"># --- SSL / TLS ---</span>
+<span class="ln">40</span>    <span class="c-key">ssl_certificate</span>     <span class="c-str">/etc/letsencrypt/live/plex.home.example.com/fullchain.pem</span>;
+<span class="ln">41</span>    <span class="c-key">ssl_certificate_key</span> <span class="c-str">/etc/letsencrypt/live/plex.home.example.com/privkey.pem</span>;
+<span class="ln">42</span>    <span class="c-key">ssl_protocols</span>       <span class="c-str">TLSv1.2 TLSv1.3</span>;
+<span class="ln">43</span>    <span class="c-key">ssl_prefer_server_ciphers</span> <span class="c-bool">off</span>;
+<span class="ln">44</span>    <span class="c-key">ssl_session_cache</span>   <span class="c-str">shared:SSL:10m</span>;
+<span class="ln">45</span>    <span class="c-key">ssl_stapling</span>        <span class="c-bool">on</span>;
+<span class="ln">46</span>    <span class="c-key">ssl_stapling_verify</span> <span class="c-bool">on</span>;
+<span class="ln">47</span>
+<span class="ln">48</span>    <span class="c-comment"># --- Security headers ---</span>
+<span class="ln">49</span>    <span class="c-key">add_header</span> <span class="c-str">X-Frame-Options</span>        <span class="c-str">"SAMEORIGIN"</span>  always;
+<span class="ln">50</span>    <span class="c-key">add_header</span> <span class="c-str">X-Content-Type-Options</span> <span class="c-str">"nosniff"</span>     always;
+<span class="ln">51</span>    <span class="c-key">add_header</span> <span class="c-str">Strict-Transport-Security</span> <span class="c-str">"max-age=31536000; includeSubDomains"</span> always;
+<span class="ln">52</span>
+<span class="ln">53</span>    <span class="c-comment"># --- WebSocket upgrade ---</span>
+<span class="ln">54</span>    <span class="c-key">proxy_set_header</span>   <span class="c-str">Upgrade</span>   $http_upgrade;
+<span class="ln">55</span>    <span class="c-key">proxy_set_header</span>   <span class="c-str">Connection</span> <span class="c-str">"upgrade"</span>;
+<span class="ln">56</span>    <span class="c-key">proxy_read_timeout</span> <span class="c-num">86400s</span>;
+<span class="ln">57</span>
+<span class="ln">58</span>    <span class="c-key">location</span> / <span style="color:#4a4845">{</span>
+<span class="ln">59</span>        <span class="c-key">proxy_pass</span>         http://proxysmith_plex;
+<span class="ln">60</span>        <span class="c-key">proxy_http_version</span> <span class="c-num">1.1</span>;
+<span class="ln">61</span>        <span class="c-key">proxy_set_header</span>   <span class="c-str">Host</span>              $host;
+<span class="ln">62</span>        <span class="c-key">proxy_set_header</span>   <span class="c-str">X-Real-IP</span>         $remote_addr;
+<span class="ln">63</span>        <span class="c-key">proxy_set_header</span>   <span class="c-str">X-Forwarded-For</span>   $proxy_add_x_forwarded_for;
+<span class="ln">64</span>        <span class="c-key">proxy_set_header</span>   <span class="c-str">X-Forwarded-Proto</span> $scheme;
+<span class="ln">65</span>        <span class="c-key">proxy_set_header</span>   <span class="c-str">X-Plex-Client-Identifier</span> <span class="c-str">"proxysmith"</span>;
+<span class="ln">66</span>    <span style="color:#4a4845">}</span>
+<span class="ln">67</span><span style="color:#4a4845">}</span>
+<span class="ln">68</span>
+<span class="ln">69</span><span class="c-comment"># --- Service: ollama ---</span>
+<span class="ln">70</span><span style="color:#7dd3fc99">server</span> <span style="color:#4a4845">{</span>
+<span class="ln">71</span>    <span class="c-key">listen</span>      <span class="c-str">443 ssl</span>;
+<span class="ln">72</span>    <span class="c-key">server_name</span> <span class="c-str">llm.home.example.com</span>;
+<span class="ln">73</span>
+<span class="ln">74</span>    <span class="c-comment"># --- Basic Auth ---</span>
+<span class="ln">75</span>    <span class="c-key">auth_basic</span>           <span class="c-str">"Restricted"</span>;
+<span class="ln">76</span>    <span class="c-key">auth_basic_user_file</span> <span class="c-str">/etc/nginx/htpasswd/ollama</span>;
+<span class="ln">77</span>
+<span class="ln">78</span>    <span class="c-comment"># --- Rate limiting ---</span>
+<span class="ln">79</span>    <span class="c-key">limit_req</span>  <span class="c-str">zone=ollama_limit</span> burst=20 nodelay;
+<span class="ln">80</span>
+<span class="ln">81</span>    <span class="c-key">location</span> / <span style="color:#4a4845">{</span>
+<span class="ln">82</span>        <span class="c-key">proxy_pass</span> http://proxysmith_ollama;
+<span class="ln">83</span>        <span class="c-key">proxy_connect_timeout</span> <span class="c-num">10s</span>;
+<span class="ln">84</span>        <span class="c-key">proxy_read_timeout</span>    <span class="c-num">60s</span>;
+<span class="ln">85</span>    <span style="color:#4a4845">}</span>
+<span class="ln">86</span><span style="color:#4a4845">}</span></pre>
+      </div>
+
+      <div class="statusbar">
+        <span>nginx/proxysmith.conf</span>
+        <span class="ml">11.9kb</span>
+        <span style="color:#2e2c28">#a3f1c8e0</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer class="footer">
+    <span class="mono" style="font-size:11px; color:#2e2c28">pip install proxysmith</span>
+    <span class="mono" style="font-size:11px; color:#2e2c28">proxysmith generate --target nginx</span>
+  </footer>
+
+</div>
+</body>
+</html>

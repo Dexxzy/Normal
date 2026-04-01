@@ -1,0 +1,36 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.env
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy
+.mypy_cache/
+
+# Node / frontend build
+node_modules/
+proxysmith/web/frontend/dist/
+
+# ProxySmith generated output
+output/
+.proxysmith_state.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
