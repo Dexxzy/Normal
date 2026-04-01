@@ -1,0 +1,33 @@
+[global]
+domain = "home.example.com"
+ssl    = "auto"
+email  = "admin@example.com"
+
+[[service]]
+name      = "plex"
+host      = "192.168.1.50"
+port      = 32400
+subdomain = "plex"
+websocket = true
+headers   = { X-Plex-Client-Identifier = "proxysmith" }
+
+[[service]]
+name       = "immich"
+host       = "192.168.1.50"
+port       = 2283
+subdomain  = "photos"
+max_upload = "10G"
+
+[[service]]
+name       = "ollama"
+host       = "192.168.1.50"
+port       = 11434
+subdomain  = "llm"
+auth       = "basic"
+rate_limit = "60/min"
+
+[[service]]
+name      = "homepage"
+host      = "192.168.1.50"
+port      = 3000
+subdomain = "dash"

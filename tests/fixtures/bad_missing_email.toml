@@ -1,0 +1,10 @@
+[global]
+domain = "home.example.com"
+ssl    = "auto"
+# email intentionally omitted
+
+[[service]]
+name      = "app"
+host      = "192.168.1.1"
+port      = 8080
+subdomain = "app"

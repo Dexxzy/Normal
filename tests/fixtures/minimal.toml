@@ -1,0 +1,9 @@
+[global]
+domain = "lab.local"
+ssl    = "none"
+
+[[service]]
+name      = "app"
+host      = "127.0.0.1"
+port      = 8080
+subdomain = "app"

@@ -1,0 +1,16 @@
+[global]
+domain = "home.example.com"
+ssl    = "auto"
+email  = "admin@example.com"
+
+[[service]]
+name      = "foo"
+host      = "192.168.1.1"
+port      = 8080
+subdomain = "app"
+
+[[service]]
+name      = "bar"
+host      = "192.168.1.2"
+port      = 9090
+subdomain = "app"
