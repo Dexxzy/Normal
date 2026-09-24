@@ -1,0 +1,6 @@
+# Only needed for the local fine-tune path (train_lora.py / --backend local).
+# Needs a GPU (or Apple Silicon) to be practical. CPU works for the 0.5B model, slowly.
+torch>=2.2
+transformers>=4.44
+peft>=0.12
+accelerate>=0.33
