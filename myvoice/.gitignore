@@ -1,0 +1,7 @@
+# generated artifacts
+data/
+models/
+*.jsonl
+.env
+__pycache__/
+.pytest_cache/
